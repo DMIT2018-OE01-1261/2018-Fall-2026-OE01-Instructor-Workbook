@@ -31,3 +31,18 @@ Employees
 		IncomeCategory = x.BaseRate < 30 ? "Required Review" : "No Review Required"
 	})
 	.Dump();
+	
+// Question 2
+// Question: "How would you filter the Products table to retrieve items in the 'Music, Movies, and Audio Books' category, and return the results as an anonymous data set that includes the product name, color, and whether color processing is needed, ordered by style name?"
+// Note: Not black and white means additional Colour processing may be needed
+Products
+	.Where(x => x.ProductSubcategory.ProductCategory.ProductCategoryName == "Music, Movies and Audio Books")
+	.OrderBy(x => x.StyleName)
+	.Select(x => new
+	{
+		ProductName = x.ProductName,
+		Colour = x.ColorName,
+		// When using AND or OR in a ternary you should have brackets (it is good practice)
+		ColourProcessNeeded = (x.ColorName == "Black" || x.ColorName == "White")  ? "No" : "Yes"
+	})
+	.Dump();
