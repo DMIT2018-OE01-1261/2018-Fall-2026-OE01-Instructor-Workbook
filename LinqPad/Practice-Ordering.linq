@@ -19,21 +19,29 @@
 
 // ======== In Class Examples ========
 // Question 1
+// A datatype with a ? at the end is nullable (not required)
+//	this means the data could be null in that field
+//	Best practice is to get the underlying value from the data with .Value
 // DateOnly is (year, month, day)
-Employees.Where(x => x.HireDate >= new DateOnly(2022, 01, 01))
-	.Dump("Question 1");
+Employees
+	.Where(x => x.HireDate.Value >= new DateOnly(2022, 1, 1))
+	.OrderBy(x => x.LastName)
+	.Dump();
 	
-//Question 2
-Products.Where(x => x.AvailableForSaleDate >= new DateTime(2019, 07, 01))
-	.Dump("Question 2");
-	
-//Question 3
+// Question 3
+// Ordering should ALWAYS be after you filter your data to optimize your queries
+//	I WILL DOCK MARKS FOR THIS
 Customers
 	.Where(x => x.YearlyIncome > 60000 && x.YearlyIncome < 61000)
+	.OrderBy(x => x.EmailAddress)
 	.Select(x => x.EmailAddress)
 	.Dump();
 	
-//Question 4
-Promotions
-	.Where(x => x.PromotionName.ToUpper().Contains("NORTH AMERICA"))
+// =========== Take Home Practice =========
+// Question 4
+Stores
+	.Where(x => x.StoreName.Contains("No."))
+	.OrderBy(x => x.SellingAreaSize)
+	.ThenByDescending(x => x.EmployeeCount)
+	.ThenBy(x => x.StoreName)
 	.Dump();

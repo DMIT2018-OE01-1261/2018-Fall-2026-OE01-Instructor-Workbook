@@ -19,21 +19,15 @@
 
 // ======== In Class Examples ========
 // Question 1
-// DateOnly is (year, month, day)
-Employees.Where(x => x.HireDate >= new DateOnly(2022, 01, 01))
-	.Dump("Question 1");
-	
-//Question 2
-Products.Where(x => x.AvailableForSaleDate >= new DateTime(2019, 07, 01))
-	.Dump("Question 2");
-	
-//Question 3
-Customers
-	.Where(x => x.YearlyIncome > 60000 && x.YearlyIncome < 61000)
-	.Select(x => x.EmailAddress)
-	.Dump();
-	
-//Question 4
-Promotions
-	.Where(x => x.PromotionName.ToUpper().Contains("NORTH AMERICA"))
+// Question: "How would you filter the Employees table to retrieve those with a base rate of less than$30, and return the results as an anonymous data set that includes their full name, department, and  whether they require a salary review, ordered by last name?" 
+Employees
+	// Since we do not select the last name the order by
+	// must be before the select
+	.OrderBy(x => x.LastName)
+	.Select(x => new
+	{
+		FullName = x.FirstName + " " + x.LastName,
+		Department = x.DepartmentName,
+		IncomeCategory = x.BaseRate < 30 ? "Required Review" : "No Review Required"
+	})
 	.Dump();
