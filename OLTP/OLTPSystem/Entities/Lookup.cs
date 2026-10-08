@@ -1,0 +1,47 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
+namespace OLTPSystem.Entities;
+
+[Table("Lookup")]
+public partial class Lookup
+{
+    [Key]
+    public int LookupID { get; set; }
+
+    public int CategoryID { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string Name { get; set; } = null!;
+
+    public bool RemoveFromViewFlag { get; set; }
+
+    [ForeignKey("CategoryID")]
+    [InverseProperty("Lookups")]
+    public virtual Category Category { get; set; } = null!;
+
+    [InverseProperty("Country")]
+    public virtual ICollection<Customer> CustomerCountries { get; set; } = new List<Customer>();
+
+    [InverseProperty("ProvState")]
+    public virtual ICollection<Customer> CustomerProvStates { get; set; } = new List<Customer>();
+
+    [InverseProperty("Status")]
+    public virtual ICollection<Customer> CustomerStatuses { get; set; } = new List<Customer>();
+
+    [InverseProperty("Country")]
+    public virtual ICollection<Employee> EmployeeCountries { get; set; } = new List<Employee>();
+
+    [InverseProperty("ProvState")]
+    public virtual ICollection<Employee> EmployeeProvStates { get; set; } = new List<Employee>();
+
+    [InverseProperty("Role")]
+    public virtual ICollection<Employee> EmployeeRoles { get; set; } = new List<Employee>();
+
+    [InverseProperty("PartCategory")]
+    public virtual ICollection<Part> Parts { get; set; } = new List<Part>();
+}

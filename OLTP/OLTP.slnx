@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="OLTPSystem.Tests/OLTPSystem.Tests.csproj" />
+  <Project Path="OLTPSystem/OLTPSystem.csproj" />
+</Solution>
