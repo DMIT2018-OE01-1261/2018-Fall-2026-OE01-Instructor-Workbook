@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using OLTPSystem.DAL;
 
+// Run test classes one at a time. Every test holds a database transaction open,
+//	so two classes running at the same time can lock each other (deadlock).
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace OLTPSystem.Tests;
 
 // Every test class inherits from TestBase. (Do not modify)

@@ -36,7 +36,86 @@ namespace OLTPSystem.BLL
                 return result;
             }
 
-            return new Result<List<CustomerSearchView>>();
+            //rule: (Standard Rule) RemoveFromViewFlag cannot be true
+            // This is a typical rule to follow when returning data
+            var customers = _context.Customers
+                .Where(x => x.RemoveFromViewFlag == false
+                    &&
+                    (
+                        (!string.IsNullOrWhiteSpace(lastName)
+                        &&
+                        x.LastName.ToLower().Contains(lastName.ToLower())
+                        )
+                        ||
+                        (!string.IsNullOrWhiteSpace(phone)
+                        &&
+                        x.Phone.Contains(phone)
+                        )
+                    )
+                )
+                .Select(x => new CustomerSearchView
+                {
+                    CustomerID = x.CustomerID,
+                    FullName = x.FirstName + " " + x.LastName,
+                    Address = x.Address1 + " " + x.City + ", " + x.ProvState.Name + " " + x.Country.Name + " " + x.PostalCode,
+                    Phone = x.Phone,
+                    Email = x.Email,
+                    Status = x.Status.Name,
+                    TotalSales = x.Invoices.Sum(i => i.SubTotal + i.Tax)
+                }).ToList();
+
+            if(!customers.Any())
+            {
+                result.AddError(new Error("No customers were found"));
+                return result;
+            }
+
+            //Happy Path - we got customers and no business rules were brokens
+            //Remember to return the happy path results WithValue!
+            return result.WithValue(customers);
+        }
+
+        public Result<CustomerEditView> GetCustomer_ByID(int customerID)
+        {
+            var result = new Result<CustomerEditView>();
+
+            if(customerID <= 0)
+            {
+                result.AddError(new Error("Missing Information", "A valid CustomerID must be provided"));
+                return result;
+            }
+
+            var customer = _context.Customers
+                .Where(x => !x.RemoveFromViewFlag
+                    && x.CustomerID == customerID)
+                .Select(x => new CustomerEditView
+                {
+                    CustomerID = x.CustomerID,
+                    FirstName = x.FirstName,
+                    LastName = x.LastName,
+                    Address1 = x.Address1,
+                    // Address2 can be null in the database, but our view model isn't nullable
+                    //      We did set a default, but we should still add a default in our code when
+                    //      setting the value
+                    // ?? checks if the value before is null, if it is then it returns the value after ??
+                    Address2 = x.Address2 ?? string.Empty,
+                    City = x.City,
+                    ProvStateID = x.ProvStateID,
+                    CountryID = x.CountryID,
+                    PostalCode = x.PostalCode,
+                    Phone = x.Phone,
+                    Email = x.Email,
+                    StatusID = x.StatusID,
+                    RemoveFromViewFlag = x.RemoveFromViewFlag
+                }).FirstOrDefault();
+
+            if(customer == null)
+            {
+                result.AddError(new Error("No Customer", $"No customer was found with ID: {customerID}"));
+                return result;
+            }
+
+            return result.WithValue(customer);
         }
     }
 }

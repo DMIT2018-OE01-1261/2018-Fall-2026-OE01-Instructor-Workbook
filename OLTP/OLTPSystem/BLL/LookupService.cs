@@ -1,0 +1,40 @@
+﻿using BYSResults;
+using OLTPSystem.DAL;
+using OLTPSystem.ViewModels;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace OLTPSystem.BLL
+{
+    public class LookupService
+    {
+        #region Data Context Setup
+        private readonly OLTPContext _context;
+
+        // The context is passed in (injected). Right now the tests will pass it in for you.
+        //  one in Blazor this happens almost automatically
+        public LookupService(OLTPContext context)
+        {
+            _context = context
+                        ?? throw new ArgumentNullException(nameof(context));
+        }
+        #endregion
+
+        public Result<List<LookupView>> GetLookupValues(int categoryID)
+        {
+            var result = new Result<List<LookupView>>();
+            
+            return result;
+        }
+
+        // Created an overloaded method so the user can search by ID or Name
+        //  Overloaded method is the same name and return type, but have different parameters
+        public Result<List<LookupView>> GetLookupValues(string categoryName)
+        {
+            var result = new Result<List<LookupView>>();
+            
+            return result;
+        }
+    }
+}
