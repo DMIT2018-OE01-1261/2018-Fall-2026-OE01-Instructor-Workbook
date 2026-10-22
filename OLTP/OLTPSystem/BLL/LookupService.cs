@@ -1,5 +1,6 @@
 ﻿using BYSResults;
 using OLTPSystem.DAL;
+using OLTPSystem.Entities;
 using OLTPSystem.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,13 @@ namespace OLTPSystem.BLL
         public Result<List<LookupView>> GetLookupValues(int categoryID)
         {
             var result = new Result<List<LookupView>>();
-            
+            // rule: CategoryID must have a value
+            if(categoryID <= 0)
+            {
+                result.AddError(new Error("Missing Information","CategoryID must be provided."));
+                return result;
+            }    
+
             return result;
         }
 
@@ -33,8 +40,30 @@ namespace OLTPSystem.BLL
         public Result<List<LookupView>> GetLookupValues(string categoryName)
         {
             var result = new Result<List<LookupView>>();
-            
-            return result;
+            if(string.IsNullOrWhiteSpace(categoryName))
+
+            {
+                result.AddError(new Error("Missing Information","Category name must be provided."));
+                return result;
+            }
+            var values = _context.Lookups
+                .Where(x => x.Category.CategoryName.ToLower() == categoryName.ToLower()
+                    && !x.RemoveFromViewFlag)
+                .Select(x => new LookupView
+                {
+                    LookupID = x.LookupID,
+                    Name = x.Name
+                })
+                .OrderBy(x => x.Name)
+                .ToList();
+
+            if (!values.Any())
+            {
+                result.AddError(new Error("No Lookups", $"No lookup values found for the Category Name {categoryName}"));
+                return result;
+            }    
+
+            return result.WithValue(values);
         }
     }
 }

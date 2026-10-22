@@ -2,6 +2,7 @@
 using OLTPSystem.Entities;
 using OLTPSystem.ViewModels;
 using BYSResults;
+using OLTPSystem.Helpers;
 
 namespace OLTPSystem.BLL
 {
@@ -117,5 +118,117 @@ namespace OLTPSystem.BLL
 
             return result.WithValue(customer);
         }
+
+        #region OLTP Methods
+        // Public Methods
+        public Result<CustomerEditView> AddCustomer(CustomerEditView newCustomer)
+        {
+            var result = new Result<CustomerEditView>();
+
+            // rule: a customer must be provided
+            if (newCustomer == null)
+            {
+                result.AddError(new Error("Missing Information", "No customer was provided."));
+                // return right away
+                return result;
+            }
+            // rule: a new customer cannot already have an ID
+            if (newCustomer.CustomerID != 0)
+                result.AddError(new Error("Invalid Customer", "A new customer cannot already have a CustomerID."));
+
+            // share rules (mandatory fields and duplicates)
+            ValidateCustomer(newCustomer, result);
+
+            // Once there is no more validatation, check if an error happened and if there was one, 
+            // return and do not proceed
+            if (result.IsFailure)
+                return result;
+
+            //Create a new database record, copy the values and stage the add
+            Customer customer = new();
+
+            CopyToCustomer(newCustomer, customer);
+
+            _context.Customers.Add(customer);
+
+            // Call our Save Customer Method
+            return SaveCustomer(customer, result);
+        }
+
+
+        // Private Methods
+        private void ValidateCustomer(CustomerEditView editCustomer, Result<CustomerEditView> result)
+        {
+            // rules: Mandatory Fields were provided (collect all the errors)
+            if (string.IsNullOrWhiteSpace(editCustomer.FirstName))
+                result.AddError(new Error("Missing Information", "First Name is required."));
+            if (string.IsNullOrWhiteSpace(editCustomer.LastName))
+                result.AddError(new Error("Missing Information", "Last Name is required."));
+            if (string.IsNullOrWhiteSpace(editCustomer.Address1))
+                result.AddError(new Error("Missing Information", "Address1 is required."));
+            if (string.IsNullOrWhiteSpace(editCustomer.PostalCode))
+                result.AddError(new Error("Missing Information", "Postal Code is required."));
+            if (string.IsNullOrWhiteSpace(editCustomer.Phone))
+                result.AddError(new Error("Missing Information", "Phone is required."));
+            if (string.IsNullOrWhiteSpace(editCustomer.Email))
+                result.AddError(new Error("Missing Information", "Email is required."));
+            if (editCustomer.ProvStateID <= 0)
+                result.AddError(new Error("Missing Information", "A Province or State is required."));
+            if (editCustomer.CountryID <= 0)
+                result.AddError(new Error("Missing Information", "A Country is required."));
+            if (editCustomer.StatusID <= 0)
+                result.AddError(new Error("Missing Information", "A Customer Status is required."));
+
+            // rule: FirstName, LastName, and Phone must be unique
+            bool existingCustomer = _context.Customers
+                .Any(x => x.FirstName.ToLower() == editCustomer.FirstName.ToLower()
+                    && x.LastName.ToLower() == editCustomer.LastName.ToLower()
+                    && x.Phone == editCustomer.Phone
+                    && x.CustomerID != editCustomer.CustomerID);
+
+            // Check if there were and add an error if needed
+            if(existingCustomer)
+            {
+                result.AddError(new Error("Existing Customer Data", $"A customer with the name {editCustomer.FirstName} {editCustomer.LastName} and the phone number {editCustomer.Phone} already exists in the database" +
+                    $"aned cannot be entered again."));
+            }
+        }
+
+        private void CopyToCustomer(CustomerEditView from, Customer to)
+        {
+            to.FirstName = from.FirstName;
+            to.LastName = from.LastName;
+            to.Address1 = from.Address1;
+            to.Address2 = from.Address2;
+            to.Email = from.Email;
+            to.Phone = from.Phone;
+            to.PostalCode = from.PostalCode;
+            to.City = from.City;
+            to.ProvStateID = from.ProvStateID;
+            to.CountryID = from.CountryID;
+            to.StatusID = from.StatusID;
+        }
+        private Result<CustomerEditView> SaveCustomer(Customer customer, Result<CustomerEditView> result)
+        {
+            try
+            {
+                _context.SaveChanges();
+                // customer.CustomerID for a NEW Customer will get an ID after it is saved
+                // Note: COMMON MISTAKE is to pass the editcustomer to GetCustomer_ByID
+                //      This will fail for a new record because ONLY the database record (Customer)
+                //      will have the new customerID.
+                return GetCustomer_ByID(customer.CustomerID);
+
+            }
+            catch(Exception ex)
+            {
+                // If you don't clear the change tracker the failing Customer record
+                //  stay in the tracked changes and will retry every time you call
+                //  SaveChanges()
+                _context.ChangeTracker.Clear();
+                result.AddError(ResultHelpers.SaveError(ex));
+                return result;
+            }
+        #endregion
     }
 }

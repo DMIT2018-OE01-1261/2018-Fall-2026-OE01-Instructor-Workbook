@@ -23,4 +23,7 @@ public static class ResultHelpers
 		// Return the populated list of error message strings
 		return errorList;
 	}
+
+	public static Error SaveError(Exception ex) 
+		=> new Error("Error Saving Changes", ex.InnerException?.Message ?? ex.Message);
 }
