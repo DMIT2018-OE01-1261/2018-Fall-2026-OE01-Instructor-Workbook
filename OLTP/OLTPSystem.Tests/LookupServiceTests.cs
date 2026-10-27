@@ -60,5 +60,28 @@ namespace OLTPSystem.Tests
             Assert.Contains($"No Lookups: No lookup values found for the Category Name {value}",
                 ResultHelpers.GetErrorMessages(result.Errors));
         }
+
+        [Fact]
+        public void GetLookupValues_ByID_ReturnsSortedValues()
+        {
+            var result = _service.GetLookupValues(2);
+
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(result.Value);
+            Assert.Equal(3, result.Value.Count);
+            Assert.Equal("Canada", result.Value[0].Name);
+            Dump(result.Value, "Countries");
+        }
+
+        [Fact]
+        public void GetLookupValues_ByID_ReturnsNoLookupError()
+        {
+            var value = 1000;
+            var result = _service.GetLookupValues(value);
+
+            Assert.True(result.IsFailure);
+            Assert.Contains($"No Lookups: No lookup values found for the Category ID {value}",
+                ResultHelpers.GetErrorMessages(result.Errors));
+        }
     }
 }

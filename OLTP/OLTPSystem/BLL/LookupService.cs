@@ -30,9 +30,26 @@ namespace OLTPSystem.BLL
             {
                 result.AddError(new Error("Missing Information","CategoryID must be provided."));
                 return result;
-            }    
+            }
 
-            return result;
+            var values = _context.Lookups
+                .Where(x => x.CategoryID == categoryID
+                    && !x.RemoveFromViewFlag)
+                .Select(x => new LookupView
+                {
+                    LookupID = x.LookupID,
+                    Name = x.Name
+                })
+                .OrderBy(x => x.Name)
+                .ToList();
+
+            if(values.Count <= 0)
+            {
+                result.AddError(new Error("No Lookups", $"No lookup values found for the Category ID {categoryID}"));
+                return result;
+            }
+
+            return result.WithValue(values);
         }
 
         // Created an overloaded method so the user can search by ID or Name

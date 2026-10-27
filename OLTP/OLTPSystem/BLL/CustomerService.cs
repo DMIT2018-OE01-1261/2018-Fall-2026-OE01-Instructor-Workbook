@@ -155,6 +155,89 @@ namespace OLTPSystem.BLL
             return SaveCustomer(customer, result);
         }
 
+        public Result<CustomerEditView> UpdateCustomer(CustomerEditView editCustomer)
+        {
+            var result = new Result<CustomerEditView>();
+
+            if(editCustomer == null)
+            {
+                result.AddError(new Error("Missing Information", "No customer was provided."));
+                // return right away
+                return result;
+            }
+
+            //rule: an existing customer must have an ID (return right away)
+            //  This differs from NEW where they could NOT have an ID
+            if(editCustomer.CustomerID <= 0)
+            {
+                result.AddError(new Error("Missing Information", "A Value Customer ID must be provided."));
+            }
+
+            //the shared rules
+            ValidateCustomer(editCustomer, result);
+            if (result.IsFailure)
+                return result;
+
+            // rule: the customer must exist (and not be deleted)
+            Customer? customer = _context.Customers
+                .Where(x => x.CustomerID == editCustomer.CustomerID
+                    && !x.RemoveFromViewFlag)
+                .FirstOrDefault();
+            // check if the customer was found (if not FirstOrDefault() returns null.
+            if(customer == null)
+            {
+                result.AddError(new Error("Cannot find Record to Edit", $"CustomerID {editCustomer.CustomerID} cannot be found, edits cannot be made."));
+                return result;
+            }
+
+            // Copy the values and stage the Update
+            CopyToCustomer(editCustomer, customer);
+            _context.Customers.Update(customer);
+
+            return SaveCustomer(customer, result);
+        }
+
+        // Delete a Customer (a SOFT delete: set the flag, keep the record)
+        //  Returns a plain Result: there is no customer to send back after a delete
+        public Result DeleteCustomer(int customerID)
+        {
+            var result = new Result();
+
+            //rule: CustomerID must be valid
+            if (customerID <= 0)
+            {
+                result.AddError(new Error("Missing Information", "A valid CustomerID must be provided."));
+                return result;
+            }
+
+            // rule: the customer must exist and is not already deleted
+             Customer? customer = _context.Customers
+                .Where(x => x.CustomerID == customerID
+                    && !x.RemoveFromViewFlag)
+                .FirstOrDefault();
+            if (customer == null)
+            {
+                result.AddError(new Error("No Customer", $"No customer was found with ID: {customerID}"));
+                return result;
+            }
+
+            //soft delete: change the flag, don't remove the record
+            customer.RemoveFromViewFlag = true;
+            _context.Customers.Update(customer);
+
+            try
+            {
+                _context.SaveChanges();
+                return result; // no errors = success!
+            }
+            catch(Exception ex)
+            {
+                _context.ChangeTracker.Clear();
+                result.AddError(ResultHelpers.SaveError(ex));
+                return result;
+            }
+        }
+
 
         // Private Methods
         private void ValidateCustomer(CustomerEditView editCustomer, Result<CustomerEditView> result)
@@ -214,7 +297,7 @@ namespace OLTPSystem.BLL
             {
                 _context.SaveChanges();
                 // customer.CustomerID for a NEW Customer will get an ID after it is saved
-                // Note: COMMON MISTAKE is to pass the editcustomer to GetCustomer_ByID
+                // Note: COMMON MISTAKE is to pass the editcustomer or newCustomer to GetCustomer_ByID
                 //      This will fail for a new record because ONLY the database record (Customer)
                 //      will have the new customerID.
                 return GetCustomer_ByID(customer.CustomerID);
@@ -229,6 +312,7 @@ namespace OLTPSystem.BLL
                 result.AddError(ResultHelpers.SaveError(ex));
                 return result;
             }
+        }
         #endregion
     }
 }
