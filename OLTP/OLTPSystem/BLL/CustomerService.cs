@@ -170,7 +170,7 @@ namespace OLTPSystem.BLL
             //  This differs from NEW where they could NOT have an ID
             if(editCustomer.CustomerID <= 0)
             {
-                result.AddError(new Error("Missing Information", "A Value Customer ID must be provided."));
+                result.AddError(new Error("Missing Information", "A valid Customer ID must be provided."));
             }
 
             //the shared rules

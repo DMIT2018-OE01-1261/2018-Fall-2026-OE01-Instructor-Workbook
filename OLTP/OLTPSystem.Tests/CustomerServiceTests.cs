@@ -176,6 +176,86 @@ namespace OLTPSystem.Tests
         }
         #endregion
 
+        #region UpdateCustomer
+        [Fact]
+        public void UpdateCustomer_ExistingCustomer_SaveChanges()
+        {
+            var customer = _service.GetCustomer_ByID(5).Value;
+            Assert.NotNull(customer);
+            customer.City = "Changed City";
+
+            var result = _service.UpdateCustomer(customer);
+
+            Assert.True(result.IsSuccess);
+            Assert.NotNull(result.Value);
+            Assert.Equal(5, result.Value.CustomerID);
+            Assert.Equal("Changed City", result.Value.City);
+        }
+        [Fact]
+	    public void UpdateCustomer_NoID_ReturnsMissingInfoError()
+	    {
+		    var result = _service.UpdateCustomer(NewCustomer());     // CustomerID is 0
+
+		    Assert.True(result.IsFailure);
+		    Assert.Contains("Missing Information: A valid Customer ID must be provided.",
+			    ResultHelpers.GetErrorMessages(result.Errors));
+	    }
+
+	    [Fact]
+	    public void UpdateCustomer_CustomerNotFound_ReturnsCannotFindError()
+	    {
+		    var customer = NewCustomer();
+		    customer.CustomerID = 999999;
+
+		    var result = _service.UpdateCustomer(customer);
+
+		    Assert.True(result.IsFailure);
+		    Assert.Contains(ResultHelpers.GetErrorMessages(result.Errors),
+			    e => e.StartsWith("Cannot find Record to Edit:"));
+	    }
+        #endregion
+
+        #region Delete Customer
+        // Note: Remember DeleteCustomer reports SUCCESS only, it doesn't try to return the deleted customer
+        [Fact]
+        public void DeleteCustomer_ExistingCustomer_SucceedsAndHidesCustomer()
+        {
+            var result = _service.DeleteCustomer(5);
+
+            Assert.True(result.IsSuccess);
+            // Check if the remove from view flag was set - hidden
+            //  GetCustomer_ByID does not return a customer if the RemoveFromViewFlag is true
+            Assert.True(_service.GetCustomer_ByID(5).IsFailure);
+            // Check if the record is still in the database
+            //  To check this, I go directly to the Context (the database connection)
+            Assert.True(Context.Customers.Single(x => x.CustomerID == 5).RemoveFromViewFlag);
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void DeleteCustomer_InvalidID_ReturnsMissingInfoError(int customerID)
+        {
+            var result = _service.DeleteCustomer(customerID);
+
+            Assert.True(result.IsFailure);
+            Assert.Contains("Missing Information: A valid CustomerID must be provided.",
+                ResultHelpers.GetErrorMessages(result.Errors));
+        }
+
+        [Fact]
+	    public void DeleteCustomer_AlreadyDeleted_ReturnsNoCustomerError()
+	    {
+		    _service.DeleteCustomer(5);
+
+		    var result = _service.DeleteCustomer(5);
+
+		    Assert.True(result.IsFailure);
+		    Assert.Contains(ResultHelpers.GetErrorMessages(result.Errors),
+			    e => e.StartsWith("No Customer:"));
+	    }
+        #endregion
+
         #region TestHelpers
         private CustomerEditView NewCustomer()
         {
