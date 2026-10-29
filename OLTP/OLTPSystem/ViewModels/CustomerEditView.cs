@@ -19,5 +19,10 @@ namespace OLTPSystem.ViewModels
         public string Email { get; set; } = String.Empty;
         public int StatusID { get; set; }
         public bool RemoveFromViewFlag { get; set; }
+
+        // Invoice Information
+        public bool HasInvoices { get; set; }
+        // Whenever a view has a collection, make sure to default it to an empty collection!
+        public List<InvoiceListView> Invoices { get; set; } = [];
     }
 }

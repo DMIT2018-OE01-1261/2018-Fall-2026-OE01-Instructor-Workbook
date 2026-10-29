@@ -107,7 +107,19 @@ namespace OLTPSystem.BLL
                     Phone = x.Phone,
                     Email = x.Email,
                     StatusID = x.StatusID,
-                    RemoveFromViewFlag = x.RemoveFromViewFlag
+                    RemoveFromViewFlag = x.RemoveFromViewFlag,
+                    HasInvoices = x.Invoices.Any(),
+                    Invoices = x.Invoices
+                        .Select(i => new InvoiceListView
+                        {
+                            InvoiceID = i.InvoiceID,
+                            InvoiceDate = i.InvoiceDate,
+                            CustomerID = i.CustomerID,
+                            EmployeeID = i.EmployeeID,
+                            CustomerName = i.Customer.FirstName + " " + i.Customer.LastName,
+                            EmployeeName = i.Employee.FirstName + " " + i.Employee.LastName,
+                            Total = i.SubTotal + i.Tax
+                        }).ToList() 
                 }).FirstOrDefault();
 
             if(customer == null)
