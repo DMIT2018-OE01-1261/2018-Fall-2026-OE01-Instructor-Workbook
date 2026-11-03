@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Azure.Core;
 using BYSResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using OLTPSystem.DAL;
+using OLTPSystem.Entities;
+using OLTPSystem.Helpers;
 using OLTPSystem.ViewModels;
 
 namespace OLTPSystem.BLL
@@ -117,11 +120,123 @@ namespace OLTPSystem.BLL
             return result.WithValue(invoice);
         }
 
-        private void AddInvoice(InvoiceView invoice)
+        private Result<InvoiceView> AddInvoice(InvoiceView newInvoice)
         {
             var result = new Result<InvoiceView>();
-            ValidateInvoice(invoice, result);
+
+            //rule: an invoice must be provided (return right away)
+            if(newInvoice == null)
+            {
+                result.AddError(new Error("Missing Information", "An Invoice must be provided."));
+                return result;
+            }
+
+            //rule: a new invoice cannot already have an ID
+            if (newInvoice.InvoiceID != 0)
+                result.AddError(new Error("Invalid Invoice", "A new invoice cannot already have an InvoiceID."));
+
+            // the shared rules
+            ValidateInvoice(newInvoice, result);
+            if (result.IsFailure)
+                return result;
+
+            // Create the new parent record, copy its values THEN add its children
+            Invoice invoice = new();
+            CopyToInvoice(newInvoice, invoice);
+            ApplyInvoiceLines(newInvoice, invoice);
+
+            _context.Invoices.Add(invoice);
+
+            return SaveInvoice(invoice, result);
         }
+
+        private Result<InvoiceView> UpdateInvoice(InvoiceView editInvoice)
+        {
+            var result = new Result<InvoiceView>();
+
+            //rule: an invoice must be provided (return right away)
+            if (editInvoice == null)
+            {
+                result.AddError(new Error("Missing Information", "An Invoice must be provided."));
+                return result;
+            }
+
+            //rule: an existing invoice must have an ID (return right away)
+            if (editInvoice.InvoiceID <= 0)
+            {
+                result.AddError(new Error("Missing Information", "An valid InvoiceID must be provided."));
+                return result;
+            }
+
+            // the shared rules
+            ValidateInvoice(editInvoice, result);
+            if (result.IsFailure)
+                return result;
+
+            // rule: the invoice must exist (and not be deleted)
+            Invoice? invoice = _context.Invoices
+                .Where(x => x.InvoiceID == editInvoice.InvoiceID
+                    && !x.RemoveFromViewFlag)
+                .FirstOrDefault();
+            if(invoice == null)
+            {
+                result.AddError(new Error("Invoice Not Found", 
+                    $"An invoice with invoiceID {editInvoice.InvoiceID} could not be found to edit."));
+                return result;
+            }
+
+            CopyToInvoice(editInvoice, invoice);
+            ApplyInvoiceLines(editInvoice, invoice);
+
+            _context.Invoices.Update(invoice);
+
+            return SaveInvoice(invoice, result);
+        }
+
+        // Delete an invoice (a SOFT delete: set the flag, keep the record ande its lines)
+        //  Returns a plain Result: there is no onvoice to send back after a delete
+        public Result DeleteInvoice(int invoiceID)
+        {
+            var result = new Result();
+
+            // rule: InvoiceID must be valid
+            if (invoiceID <= 0)
+            {
+                result.AddError(new Error("Missing Information", "A valid InvoiceID must be provided."));
+                return result;
+            }
+
+            // rule: the invoice must exist and not already be deleted
+            Invoice? invoice = _context.Invoices
+                .Where(x => x.InvoiceID == invoiceID
+                    && !x.RemoveFromViewFlag)
+                .FirstOrDefault();
+            if(invoice == null)
+            {
+                result.AddError(new Error("No results",
+                    $"No invoice was found for the invoice ID {invoiceID}"));
+                return result;
+            }
+
+            // Soft delete: flag it, don't remove it!
+            invoice.RemoveFromViewFlag = true;
+            _context.Invoices.Update(invoice);
+
+            try
+            {
+                _context.SaveChanges();
+                return result; //no error = success!
+            }
+            catch (Exception ex)
+            {
+                // Rollback any changes if there is an error
+                _context.ChangeTracker.Clear();
+                result.AddError(ResultHelpers.SaveError(ex));
+                return result;
+            }
+        }
+
+
 
         // Private Helpers
         private void ValidateInvoice(InvoiceView invoiceView, Result<InvoiceView> result)
@@ -188,6 +303,92 @@ namespace OLTPSystem.BLL
                 result.AddError(new Error("Duplicate Invoice Line",
                     $"Part {partName} can only be added to the invoice once."));
             }  
+        }
+
+        private void CopyToInvoice(InvoiceView from, Invoice to)
+        {
+            to.CustomerID = from.CustomerID;
+            to.EmployeeID = from.EmployeeID;
+            to.InvoiceDate = from.InvoiceDate;
+        }
+
+        // Add or update each child (invoice line), and recalculate the parent's totals
+        private void ApplyInvoiceLines(InvoiceView invoiceView, Invoice invoice)
+        {
+            // Recalculate the totals from the line, so 0 the totals first
+            invoice.SubTotal = 0;
+            invoice.Tax = 0;
+
+            foreach (var invoiceLineView in invoiceView.InvoiceLines)
+            {
+                // The child's database record, if it exists ON THIS INVOICE
+                //  Note: A new invoice has InvoiceID 0, so it never finds one)
+                InvoiceLine? invoiceLine = null;
+                // Query if this is an update only
+                if (invoiceView.InvoiceID != 0)
+                {
+                    invoiceLine = _context.InvoiceLines
+                        .Where(x => x.InvoiceLineID == invoiceLineView.InvoiceLineID
+                            && x.InvoiceID == invoice.InvoiceID
+                            && !x.RemoveFromViewFlag)
+                        .FirstOrDefault();
+                }
+
+                if(invoiceLine == null)
+                {
+                    invoiceLine = new InvoiceLine();
+                    // ONLY going to set the new PartID when it is a new line
+                    //  We don't update a core identifier in the record, if they want to change the
+                    //  Part for an invoice line, this should be a delete and insert, not an update.
+                    invoiceLine.PartID = invoiceLineView.PartID;
+                }
+
+                invoiceLine.Quantity = invoiceLineView.Quantity;
+                invoiceLine.Price = invoiceLineView.Price;
+                // a line can be soft deleted by setting its flag
+                invoiceLine.RemoveFromViewFlag = invoiceLineView.RemoveFromViewFlag;
+
+                // Add to the totals (skipping deleted lines). 
+                //  In this example the tax rate is 5% (Alberta)
+                if(!invoiceLineView.RemoveFromViewFlag)
+                {
+                    invoice.SubTotal += invoiceLine.Quantity * invoiceLine.Price;
+                    bool isTaxable = _context.Parts
+                        .Where(x => x.PartID == invoiceLine.PartID)
+                        .Select(x => x.Taxable)
+                        .FirstOrDefault();
+
+                    // the m make 0.05 a decimal
+                    invoice.Tax += isTaxable ? invoiceLine.Quantity * invoiceLine.Price * 0.05m : 0;
+                }
+
+                if (invoiceLine.InvoiceLineID == 0)
+                    // New child: add it to the PARENT's collection, NEVER directly to the database
+                    //  When the parent is save, EF fills in the child's InvoiceID for us
+                    //  (a new invoice doesn't even have an ID yet!)
+                    invoice.InvoiceLines.Add(invoiceLine);
+                else
+                    // Existing child: it already has its InvoiceID, so we can directly update in the database
+                    _context.InvoiceLines.Update(invoiceLine);
+            }
+        }
+
+        private Result<InvoiceView> SaveInvoice(Invoice invoice, Result<InvoiceView> result)
+        {
+            try
+            {
+                // ONE SaveChange for the parent AND it's children
+                //  either everything save4s, or nothing does
+                _context.SaveChanges();
+                return GetInvoice(invoice.InvoiceID, invoice.CustomerID, invoice.EmployeeID);
+            }
+            catch (Exception ex)
+            {
+                // Rollback any changes if there is an error
+                _context.ChangeTracker.Clear();
+                result.AddError(ResultHelpers.SaveError(ex));
+                return result;
+            }
         }
     }
 }
