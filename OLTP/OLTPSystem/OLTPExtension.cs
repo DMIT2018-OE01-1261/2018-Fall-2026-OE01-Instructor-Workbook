@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OLTPSystem.DAL;
+using OLTPSystem.BLL;
 
 namespace OLTPSystem;
 
@@ -20,5 +21,8 @@ public static class OLTPExtension
 	{
 		services.AddDbContext<OLTPContext>(options);
 
+		services.AddScoped<CustomerService>();
+		services.AddScoped<LookupService>();
+		services.AddScoped<InvoiceService>();
 	}
 }
