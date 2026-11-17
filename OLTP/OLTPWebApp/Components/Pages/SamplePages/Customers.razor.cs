@@ -24,11 +24,13 @@ namespace OLTPWebApp.Components.Pages.SamplePages
         //  This replaces the "new CustomerService(Context)" we wrote in the tests.
         [Inject]
         protected CustomerService CustomerService { get; set; } = default!;
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
         #endregion
 
         #region Methods
         // The service method takes parameters; here they come from the page's field
-        private void GetCustomer()
+        private void GetCustomers()
         {
             // ALWAYS starts by clearing messages (feedback and errors)
             //  so old message don't stay on the page
@@ -50,8 +52,13 @@ namespace OLTPWebApp.Components.Pages.SamplePages
             catch(Exception ex)
             {
                 //capture any unexpected exceptions
-                errorMessage = ex.Message;
+                errorMessage = ex.GetBaseException().Message;
             }
+        }
+
+        private void EditCustomer(int customerID)
+        {
+            NavigationManager.NavigateTo($"/SamplePages/CustomerEdit/{customerID}");
         }
         #endregion
     }

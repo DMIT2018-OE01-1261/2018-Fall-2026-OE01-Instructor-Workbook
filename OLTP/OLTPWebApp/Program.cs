@@ -34,7 +34,12 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 // Add the OLTPSystem: its datacontext and every service (see OLTPExtension.cs)
 var oltpConnectionString = builder.Configuration.GetConnectionString("OLTPDB") ?? throw new InvalidOperationException("Connection string 'OLTPDB' not found.");
-builder.Services.OLTPDependencies(options => options.UseSqlServer(oltpConnectionString));
+builder.Services.OLTPDependencies(options =>
+        options.UseSqlServer(oltpConnectionString,
+        sql => sql.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null)));
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
