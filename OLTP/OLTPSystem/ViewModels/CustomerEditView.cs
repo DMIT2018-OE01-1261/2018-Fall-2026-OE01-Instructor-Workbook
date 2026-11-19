@@ -12,12 +12,12 @@ namespace OLTPSystem.ViewModels
         public string Address1 { get; set; } = String.Empty;
         public string Address2 { get; set; } = String.Empty;
         public string City { get; set; } = String.Empty;
-        public int ProvStateID { get; set; }
-        public int CountryID { get; set; }
+        public int? ProvStateID { get; set; }
+        public int? CountryID { get; set; }
         public string PostalCode { get; set; } = String.Empty;
         public string Phone { get; set; } = String.Empty;
         public string Email { get; set; } = String.Empty;
-        public int StatusID { get; set; }
+        public int? StatusID { get; set; }
         public bool RemoveFromViewFlag { get; set; }
 
         // Invoice Information

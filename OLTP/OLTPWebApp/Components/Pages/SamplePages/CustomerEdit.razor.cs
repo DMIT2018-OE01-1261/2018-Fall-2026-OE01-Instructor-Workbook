@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using OLTPSystem.BLL;
 using OLTPSystem.Helpers;
 using OLTPSystem.ViewModels;
@@ -19,6 +20,14 @@ namespace OLTPWebApp.Components.Pages.SamplePages
         private string errorMessage = string.Empty;
         // collect error details
         private List<string> errorDetails = [];
+
+        // @ref fields are assigned by Blazor after the component first renders.
+        // default! tell the compiler "this starts null, but Blazor will set it before I use it"/
+        private MudForm customerForm = default!;
+        // bound to the form: true when every field has a valid value
+        private bool isFormValid;
+        // bound to the form: true once the user has changed a field
+        private bool hasFormChanged;
         #endregion
 
         #region Properties

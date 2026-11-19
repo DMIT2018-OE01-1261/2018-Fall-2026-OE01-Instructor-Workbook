@@ -299,9 +299,9 @@ namespace OLTPSystem.BLL
             to.Phone = from.Phone;
             to.PostalCode = from.PostalCode;
             to.City = from.City;
-            to.ProvStateID = from.ProvStateID;
-            to.CountryID = from.CountryID;
-            to.StatusID = from.StatusID;
+            to.ProvStateID = from.ProvStateID ?? 0;
+            to.CountryID = from.CountryID ?? 0;
+            to.StatusID = from.StatusID ?? 0;
         }
         private Result<CustomerEditView> SaveCustomer(Customer customer, Result<CustomerEditView> result)
         {
