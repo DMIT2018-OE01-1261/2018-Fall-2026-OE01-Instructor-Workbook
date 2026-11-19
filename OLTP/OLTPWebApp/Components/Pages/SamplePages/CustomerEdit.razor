@@ -76,26 +76,56 @@
 					<MudSelectItem T="int?" Value="@item.LookupID">@item.Name</MudSelectItem>
 				}
 			</MudSelect>
+			<!--
+                Postal Code: a Mask controls what can be typed.
+                    "a0a 0a0": a = letter, 0 = digit, the space is added for the user.
+                    Transformation runs on every character: here it makes letters uppercase.
+                A mask doesn't stop a half-typed value (T5G 2), so Validation checks the
+                finished value against a regular expression (see ValidatePostalCode).
+            -->
 			<MudTextField Label="Postal Code"
 						  @bind-Value="editCustomer.PostalCode"
 						  Variant="Variant.Outlined"
+						  Mask="postalCodeMask"
+						  Placeholder="T5W 5T5"
 						  Immediate
 						  Required
 						  RequiredError="Postal Code must be provided."
+						  Validation="@(new Func<string, string?>(ValidatePostalCode))"
 						  MaxLength="20" />
+			<!--
+                Phone: the user sees (780) 555-1234, but CleanDelimiters removes the
+                    ( ) - and space, so the value saved is just the digits: 7805551234.
+                    Saved numbers come back from the database as digits and the mask
+                    formats them again for display.
+            -->
 			<MudTextField Label="Phone Number"
 						  @bind-Value="editCustomer.Phone"
 						  Variant="Variant.Outlined"
+						  Mask="phoneMask"
+						  Placeholder="(780) 555-1234"
 						  Immediate
 						  Required
 						  RequiredError="Phone Number must be provided."
+						  Validation="@(new Func<string, string?>(ValidatePhone))"
 						  MaxLength="20" />
+			<!--
+                Email: there's no fixed pattern for an email, so no mask.
+                    InputType.Email gives phones the email keyboard.
+                    .NET's built-in EmailAddressAttribute only checks for an "at" sign in the middle,
+                    so it accepts an address with no dot after it. ValidateEmail uses a regular expression instead,
+                    which also needs a domain ending like .com or .ca.
+                    The email is trimmed and lowercased in SaveCustomer before it is saved.
+            -->
 			<MudTextField Label="Email"
 						  @bind-Value="editCustomer.Email"
 						  Variant="Variant.Outlined"
+						  InputType="InputType.Email"
+						  Placeholder="name@example.ca"
 						  Immediate
 						  Required
 						  RequiredError="Email must be provided."
+						  Validation="@(new Func<string, string?>(ValidateEmail))"
 						  MaxLength="250" />
 			<MudSelect @bind-Value="editCustomer.StatusID"
 					   Variant="Variant.Outlined"
@@ -109,6 +139,27 @@
 					<MudSelectItem T="int?" Value="@item.LookupID">@item.Name</MudSelectItem>
 				}
 			</MudSelect>
+		</MudItem>
+		<MudItem xs="12">
+			<MudStack Row AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4">
+				<MudButton Variant="Variant.Filled"
+						   Color="Color.Primary"
+						   Disabled="@(!isFormValid || !hasFormChanged)"
+						   OnClick="SaveCustomer">
+					Save	   
+				</MudButton>
+				<MudButton Variant="Variant.Filled"
+						   Color="Color.Secondary"
+						   OnClick="Cancel">
+					@closeButtonText
+				</MudButton>
+				<MudButton Variant="Variant.Filled"
+						   Color="Color.Error"
+						   Disabled="@(editCustomer.CustomerID == 0)"
+						   OnClick="DeleteCustomer">
+					Delete	  
+				</MudButton>
+			</MudStack>
 		</MudItem>
 	</MudGrid>
 </MudForm>
