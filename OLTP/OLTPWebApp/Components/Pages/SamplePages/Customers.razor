@@ -7,19 +7,26 @@
 
 <DMIT2018FeedbackAndErrorDisplay ErrorDetails="@errorDetails" ErrorMessage="@errorMessage" FeedbackMessage="@feedbackMessage" />
 
-<MudTextField @bind-Value="lastName"
-			  Variant="Variant.Outlined"
-			  Label="Last Name"
-			  Immediate />
-<MudTextField @bind-Value="phoneNumber"
-			  Variant="Variant.Outlined"
-			  Label="Phone Number"
-			  Immediate />
-<MudButton Variant="Variant.Outlined"
-		   Color="Color.Tertiary"
-		   OnClick="GetCustomers">
-	Search
-</MudButton>
+<MudStack Row AlignItems="AlignItems.Center">
+	<MudTextField @bind-Value="lastName"
+				  Variant="Variant.Outlined"
+				  Label="Last Name"
+				  Immediate />
+	<MudTextField @bind-Value="phoneNumber"
+				  Variant="Variant.Outlined"
+				  Label="Phone Number"
+				  Immediate />
+	<MudButton Variant="Variant.Outlined"
+			   Color="Color.Tertiary"
+			   OnClick="GetCustomers">
+		Search
+	</MudButton>
+	<MudButton Variant="Variant.Outlined"
+			   Color="Color.Secondary"
+			   OnClick="NewCustomer">
+		Add Customer
+	</MudButton>
+</MudStack>
 
 <MudDataGrid Items="customerList"
 		     Striped

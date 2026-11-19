@@ -4,4 +4,8 @@
 	The name must exactly match the [Parameter] property in the code behind.
 -->
 
-<MudText Typo="Typo.h3">Customer Edit: @(CustomerID)</MudText>
+<MudText Typo="Typo.h3">
+	@(CustomerID > 0 
+		? $"Customer Edit: {editCustomer.FirstName} {editCustomer.LastName}" 
+		: "New Customer")
+</MudText>

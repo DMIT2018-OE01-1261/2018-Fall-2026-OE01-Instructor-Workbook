@@ -60,6 +60,11 @@ namespace OLTPWebApp.Components.Pages.SamplePages
         {
             NavigationManager.NavigateTo($"/SamplePages/CustomerEdit/{customerID}");
         }
+
+        private void NewCustomer()
+        {
+            NavigationManager.NavigateTo("/SamplePages/CustomerEdit/0");
+        }
         #endregion
     }
 }
