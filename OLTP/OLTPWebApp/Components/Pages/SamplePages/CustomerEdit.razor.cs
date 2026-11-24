@@ -29,6 +29,9 @@ namespace OLTPWebApp.Components.Pages.SamplePages
         private bool isFormValid;
         // bound to the form: true once the user has changed a field
         private bool hasFormChanged;
+
+        // No login yet, every invoice is made by employee 1 (Nole Body)
+        private const int EMPLOYEE_ID = 1;
         #endregion
 
         #region Properties
@@ -160,7 +163,20 @@ namespace OLTPWebApp.Components.Pages.SamplePages
             }
         }
 
-        
+        private async Task NewInvoice()
+        {
+            if (await ConfirmLeave("Are you sure you want to start an invoice? All unsaved customer changes will be lost."))
+                NavigationManager.NavigateTo($"/SamplePages/InvoiceEdit/0/{editCustomer.CustomerID}/{EMPLOYEE_ID}");
+            else
+                return;
+        }
+        private async Task EditInvoice(int invoiceID)
+        {
+            if (await ConfirmLeave("Are you sure you want to edit the invoice? All unsaved customer changes will be lost."))
+                NavigationManager.NavigateTo($"/SamplePages/InvoiceEdit/{invoiceID}/{editCustomer.CustomerID}/{EMPLOYEE_ID}");
+            else
+                return;
+        }
 
         private void ClearMessages()
         {

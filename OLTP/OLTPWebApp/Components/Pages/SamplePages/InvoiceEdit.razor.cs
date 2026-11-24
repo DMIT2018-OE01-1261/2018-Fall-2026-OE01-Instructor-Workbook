@@ -97,6 +97,12 @@ namespace OLTPWebApp.Components.Pages.SamplePages
             }
         }
 
+        private void CategoryChanged(int? newCategoryID)
+        {
+            categoryID = newCategoryID;
+            selectedPart = null;
+            quantity = 0;
+        }
         private void ClearMessages()
         {
             errorDetails.Clear();

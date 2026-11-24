@@ -1,7 +1,83 @@
 ﻿@page "/SamplePages/InvoiceEdit/{InvoiceID:int}/{CustomerID:int}/{EmployeeID:int}"
+@using OLTPSystem.ViewModels
 
 <PageTitle>Invoice Edit</PageTitle>
 
 <MudText Typo="Typo.h3">
 	@(invoice.InvoiceID == 0 ? "New Invoice" : $"Invoice #{invoice.InvoiceID}")
 </MudText>
+
+<DMIT2018FeedbackAndErrorDisplay ErrorDetails="@errorDetails" ErrorMessage="@errorMessage" FeedbackMessage="@feedbackMessage" />
+
+<!-- The invoice info (parent info) -->
+<MudGrid>
+	<MudItem xs="12" md="6">
+		<MudPaper Elevation="4" Class="pa-2" Height="155px">
+			<MudStack>
+				<MudText Typo="Typo.h6" Align="Align.Center">
+					<strong>Invoice Date: </strong>@invoice.InvoiceDate.ToShortDateString()
+				</MudText>
+				<MudText Typo="Typo.h6" Align="Align.Center">
+					<strong>Employee: </strong>@invoice.EmployeeName (@invoice.EmployeeID)
+				</MudText>
+				<MudText Typo="Typo.h6" Align="Align.Center">
+					<strong>Customer: </strong>@invoice.CustomerName (@invoice.CustomerID)
+				</MudText>
+			</MudStack>
+		</MudPaper>
+	</MudItem>
+	<MudItem xs="12" md="6">
+		<MudPaper Elevation="4" Class="pa-2" Height="155px">
+			<MudStack>
+				<MudText Typo="Typo.h6" Align="Align.Center">
+					<strong>Subtotal: </strong>@invoice.SubTotal.ToString("C2")
+				</MudText>
+				<MudText Typo="Typo.h6" Align="Align.Center">
+					<strong>Tax: </strong>@invoice.Tax.ToString("C2")
+				</MudText>
+				<MudDivider DividerType="DividerType.Middle" />
+				<MudText Typo="Typo.h6" Align="Align.Center">
+					<strong>Total: </strong>@invoice.Total.ToString("C2")
+				</MudText>
+			</MudStack>
+		</MudPaper>
+	</MudItem>
+</MudGrid>
+
+<!-- Add a child: pick a category, part and quantity -->
+<MudStack Row
+		  Class="mt-2"
+		  AlignItems="AlignItems.Center"
+		  Spacing="4">
+	<MudSelect Variant="Variant.Outlined"
+			   Label="Category"
+			   Placeholder="Select a Category..."
+			   Value="categoryID"
+			   ValueChanged="(int? newCategoryID) => CategoryChanged(newCategoryID)">
+		@foreach(var category in categories)
+		{
+			<MudSelectItem T="int?" Value="category.CategoryID">@category.CategoryName</MudSelectItem>
+		}
+	</MudSelect>
+	<MudSelect Variant="Variant.Outlined"
+			   Label="Part"
+			   Placeholder="Select a Part..."
+			   @bind-Value="selectedPart"
+			   Disabled="@(categoryID == null)">
+		@foreach(var part in AvailableParts)
+		{
+			<MudSelectItem T="InvoicePartView" Value="part">@part.Description (@part.QOH in stock)</MudSelectItem>
+		}
+	</MudSelect>
+	<!--
+		If selectedPart is not null, use the QOH
+		If it is null, 0
+	-->
+	<MudNumericField @bind-Value="quantity"
+					 Variant="Variant.Outlined"
+					 Label="Quantity"
+					 Immediate
+					 Min="0"
+					 Max="@(selectedPart?.QOH ?? 0)"
+					 Disabled="@(selectedPart == null)" />
+</MudStack>
