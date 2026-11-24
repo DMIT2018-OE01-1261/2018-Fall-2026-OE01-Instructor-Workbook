@@ -24,5 +24,6 @@ public static class OLTPExtension
 		services.AddScoped<CustomerService>();
 		services.AddScoped<LookupService>();
 		services.AddScoped<InvoiceService>();
+		services.AddScoped<PartService>();
 	}
 }

@@ -1,0 +1,7 @@
+﻿@page "/SamplePages/InvoiceEdit/{InvoiceID:int}/{CustomerID:int}/{EmployeeID:int}"
+
+<PageTitle>Invoice Edit</PageTitle>
+
+<MudText Typo="Typo.h3">
+	@(invoice.InvoiceID == 0 ? "New Invoice" : $"Invoice #{invoice.InvoiceID}")
+</MudText>

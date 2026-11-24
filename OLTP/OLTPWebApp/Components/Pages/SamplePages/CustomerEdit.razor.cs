@@ -85,7 +85,7 @@ namespace OLTPWebApp.Components.Pages.SamplePages
             errorDetails.AddRange(ResultHelpers.GetErrorMessages(result.Errors));
             return [];
         }
-        private async Task Cancel()
+        private async Task CancelAsync()
         {
             //Anytime the user could lose changes, ask first
             if (await ConfirmLeave("Are you sure you want to leave? All unsaved changes will be lost."))
@@ -159,6 +159,8 @@ namespace OLTPWebApp.Components.Pages.SamplePages
                 errorMessage = ex.GetBaseException().Message;
             }
         }
+
+        
 
         private void ClearMessages()
         {
