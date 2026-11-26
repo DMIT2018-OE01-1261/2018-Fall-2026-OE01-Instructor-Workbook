@@ -103,6 +103,61 @@ namespace OLTPWebApp.Components.Pages.SamplePages
             selectedPart = null;
             quantity = 0;
         }
+
+        // Add a child to the parent. Nothing is saved until Save is clicked.
+        private void AddPart()
+        {
+            if (selectedPart == null || quantity <= 0)
+                return;
+
+            // If the part was on the invoice AND deleted, bring back that line
+            //  (a part should only be added to an invoice once, even a deleted one)
+            InvoiceLineView? deletedLine = invoice.InvoiceLines
+                .FirstOrDefault(x => x.PartID == selectedPart.PartID && x.RemoveFromViewFlag);
+            if(deletedLine != null)
+            {
+                deletedLine.RemoveFromViewFlag = false;
+                deletedLine.Quantity = quantity;
+                // We are resetting to the default price of the product
+                deletedLine.Price = selectedPart.Price;
+            }
+            else
+            {
+                invoice.InvoiceLines.Add(new InvoiceLineView
+                {
+                    PartID = selectedPart.PartID,
+                    PartDescription = selectedPart.Description,
+                    Price = selectedPart.Price,
+                    Quantity = quantity,
+                    Taxable = selectedPart.Taxable
+                });
+            }
+
+            //reset the "add a part" controls
+            categoryID = null;
+            selectedPart = null;
+            quantity = 0;
+            UpdateTotal();
+        }
+
+        private void QuantityEdited(InvoiceLineView line, int newQualtity)
+        {
+            line.Quantity = newQualtity;
+            UpdateTotal();
+        }
+        private void PriceEdited(InvoiceLineView line, decimal newPrice)
+        {
+            line.Price = newPrice;
+            UpdateTotal();
+        }
+
+        // The page shows the totals as the user works. The service recalculates them when it saves.
+        private void UpdateTotal()
+        {
+            invoice.SubTotal = ActiveLines.Sum(x => x.ExtendedPrice);
+            invoice.Tax = ActiveLines.Sum(x => x.Taxable ? x.ExtendedPrice * 0.05m : 0);
+            edited = true;
+        }
         private void ClearMessages()
         {
             errorDetails.Clear();

@@ -80,4 +80,65 @@
 					 Min="0"
 					 Max="@(selectedPart?.QOH ?? 0)"
 					 Disabled="@(selectedPart == null)" />
+	<MudButton Variant="Variant.Filled"
+			   Color="Color.Primary"
+			   Disabled="@(selectedPart == null || quantity <= 0)"
+			   OnClick="AddPart">
+		Add Part
+	</MudButton>
+
 </MudStack>
+<!-- The Children: the invoice lines. Click a row to changes its quantity or price -->
+<MudDataGrid Items="ActiveLines"
+			 Striped
+			 Class="mt-2"
+			 FixedFooter
+			 FixedHeader
+			 Height="40vh"
+			 ReadOnly="false"
+			 EditMode="DataGridEditMode.Cell"
+			 EditTrigger="DataGridEditTrigger.OnRowClick">
+	<Columns>
+		<PropertyColumn Property="x => x.PartID" Title="Part ID" Editable="false" />
+		<PropertyColumn Property="x => x.PartDescription" Title="Description" Editable="false" />
+		<PropertyColumn Property="x => x.Quantity" Title="Quantity">
+			<EditTemplate>
+				<MudNumericField Value="context.Item.Quantity"
+								 ValueChanged="(int newQuantity) => QuantityEdited(context.Item, newQuantity)"
+								 Immediate
+								 Margin="Margin.Dense"
+								 Min="1" />
+			</EditTemplate>
+		</PropertyColumn>
+		<PropertyColumn Property="x => x.Price" Title="Price" Format="C2">
+			<EditTemplate>
+				<MudNumericField Value="context.Item.Price"
+								 ValueChanged="(decimal newPrice) => PriceEdited(context.Item, newPrice)"
+								 Immediate
+								 Margin="Margin.Dense"
+								 Min="0.00m"
+								 Step="0.5m"
+								 Format="C2" />
+			</EditTemplate>
+		</PropertyColumn>
+		<PropertyColumn Property="x => x.ExtendedPrice" Title="Ext. Price" Editable="false" Format="C2" />
+		<!-- Make sure on a editable grid, the Template Column is set to Editable="false" -->
+		<TemplateColumn Editable="false">
+			<CellTemplate>
+				<MudTooltip Text="Remove this part">
+					<MudIconButton Color="Color.Error"
+							       Icon="@Icons.Material.Filled.Delete"
+								   />
+				</MudTooltip>
+				<MudTooltip Text="Reset to the part's current price">
+					<MudIconButton Color="Color.Tertiary"
+								   Icon="@Icons.Material.Filled.Sync"
+								   />
+				</MudTooltip>
+			</CellTemplate>
+		</TemplateColumn>
+	</Columns>
+	<NoRecordsContent>
+		<MudText>No parts on this invoice yet.</MudText>
+	</NoRecordsContent>
+</MudDataGrid>
